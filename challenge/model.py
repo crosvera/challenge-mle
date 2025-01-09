@@ -1,19 +1,40 @@
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+import xgboost as xgb
 
 from typing import Tuple, Union, List
+
+
+from .preprocess import get_period_day, is_high_season, get_min_diff
 
 class DelayModel:
 
     def __init__(
         self
     ):
-        self._model = None # Model should be saved in this attribute.
+        self.features_columns = [
+            "OPERA_Latin American Wings", 
+            "MES_7",
+            "MES_10",
+            "OPERA_Grupo LATAM",
+            "MES_12",
+            "TIPOVUELO_I",
+            "MES_4",
+            "MES_11",
+            "OPERA_Sky Airline",
+            "OPERA_Copa Air"
+        ]
+        scale = 4.4402380952380955
+        self._model = xgb.XGBClassifier(random_state=1, learning_rate=0.01, scale_pos_weight = scale)
+
+        
 
     def preprocess(
         self,
         data: pd.DataFrame,
         target_column: str = None
-    ) -> Union(Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame):
+    ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
         Prepare raw data for training or predict.
 
@@ -26,7 +47,26 @@ class DelayModel:
             or
             pd.DataFrame: features.
         """
-        return
+
+        data['period_day'] = data['Fecha-I'].apply(get_period_day)
+        data['high_season'] = data['Fecha-I'].apply(is_high_season)
+        data['min_diff'] = data.apply(get_min_diff, axis = 1)
+
+        threshold_in_minutes = 15
+        data['delay'] = np.where(data['min_diff'] > threshold_in_minutes, 1, 0)
+
+        features = pd.concat([
+            pd.get_dummies(data['OPERA'], prefix = 'OPERA'),
+            pd.get_dummies(data['TIPOVUELO'], prefix = 'TIPOVUELO'), 
+            pd.get_dummies(data['MES'], prefix = 'MES')], 
+            axis = 1
+        )
+        #target = data['delay']
+        if target_column is None:
+            self.fit(features[self.features_columns], data[['delay']])
+            return features[self.features_columns]
+        
+        return features[self.features_columns], data[[target_column]]
 
     def fit(
         self,
@@ -40,6 +80,8 @@ class DelayModel:
             features (pd.DataFrame): preprocessed data.
             target (pd.DataFrame): target.
         """
+        x_train2, x_test2, y_train2, y_test2 = train_test_split(features, target, test_size = 0.33, random_state = 42)
+        self._model.fit(x_train2, y_train2)
         return
 
     def predict(
@@ -55,4 +97,4 @@ class DelayModel:
         Returns:
             (List[int]): predicted targets.
         """
-        return
+        return list(int(i) for i in self._model.predict(features))

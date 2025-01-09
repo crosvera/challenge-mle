@@ -28,7 +28,7 @@ class TestModel(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.model = DelayModel()
-        self.data = pd.read_csv(filepath_or_buffer="../data/data.csv")
+        self.data = pd.read_csv(filepath_or_buffer="./data/data.csv")
         
 
     def test_model_preprocess_for_training(
@@ -39,11 +39,11 @@ class TestModel(unittest.TestCase):
             target_column="delay"
         )
 
-        assert isinstance(features, pd.DataFrame)
+        assert isinstance(features, pd.core.frame.DataFrame)
         assert features.shape[1] == len(self.FEATURES_COLS)
         assert set(features.columns) == set(self.FEATURES_COLS)
 
-        assert isinstance(target, pd.DataFrame)
+        assert isinstance(target, pd.core.frame.DataFrame)
         assert target.shape[1] == len(self.TARGET_COL)
         assert set(target.columns) == set(self.TARGET_COL)
 
@@ -55,7 +55,7 @@ class TestModel(unittest.TestCase):
             data=self.data
         )
 
-        assert isinstance(features, pd.DataFrame)
+        assert isinstance(features, pd.core.frame.DataFrame)
         assert features.shape[1] == len(self.FEATURES_COLS)
         assert set(features.columns) == set(self.FEATURES_COLS)
 
@@ -100,4 +100,4 @@ class TestModel(unittest.TestCase):
 
         assert isinstance(predicted_targets, list)
         assert len(predicted_targets) == features.shape[0]
-        assert all(isinstance(predicted_target, int) for predicted_target in predicted_targets)
+        assert all([isinstance(predicted_target, int) for predicted_target in predicted_targets])
