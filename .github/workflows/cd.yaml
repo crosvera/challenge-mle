@@ -7,6 +7,10 @@ on:
       - completed
   push:
     branches: [ "main" ]
+    paths:
+      - "**/*.py"
+      - "do-app-spec.yaml"
+      - "Dockerfile"
 
 jobs:
   deploy-to-do:
