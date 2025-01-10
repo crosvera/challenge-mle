@@ -1,0 +1,34 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-to-do:
+    runs-on: ubuntu-latest
+    
+    # Only run if the CI workflow finished successfully.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Deploy to DigitalOcean
+        run: |
+          # Example: Update an existing App Platform app using an app spec file
+          doctl apps update ${{ secrets.DIGITALOCEAN_APP_ID }} \
+            --spec do-app-spec.yaml
+
+          # Alternatively, for creating a new App
+          # doctl apps create --spec do-app-spec.yaml
